@@ -57,7 +57,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
         elif self.path == '/thermal_stream.mjpg':
             self.stream_video(thermal_output)
         else:
-            self.send_error(404)
+            self send_error(404)
             self.end_headers()
 
     def stream_video(self, stream_output):
@@ -86,7 +86,7 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 # Function to stream thermal camera plot as MJPEG
-def thermal_camera_stream(output):
+def thermal_camera_stream(output, frame_rate=10):
     sensor = amg8833_i2c.AMG8833(addr=0x69)
     pix_res = (8, 8)
     xx, yy = (np.linspace(0, pix_res[0], pix_res[0]), np.linspace(0, pix_res[1], pix_res[1]))
@@ -104,7 +104,9 @@ def thermal_camera_stream(output):
     cbar = fig.colorbar(im1, fraction=0.0475, pad=0.03)
     cbar.set_label('Temperature [C]', labelpad=10)
 
+    interval = 1.0 / frame_rate  # Time between frames
     while True:
+        start_time = time.time()
         status, pixels = sensor.read_temp(64)
         if status:
             continue
@@ -119,7 +121,10 @@ def thermal_camera_stream(output):
         
         # Write the frame to the thermal output stream
         output.write(buf.read())
-        time.sleep(1)  # Limit the frame rate to one per second
+
+        # Sleep to maintain the frame rate
+        elapsed_time = time.time() - start_time
+        time.sleep(max(0, interval - elapsed_time))
 
 # Start the Pi camera stream
 picam2 = Picamera2()
@@ -131,7 +136,8 @@ picam2.start_recording(JpegEncoder(), FileOutput(output))
 thermal_output = StreamingOutput()
 
 # Start the thermal camera stream in a separate thread
-thermal_thread = Thread(target=thermal_camera_stream, args=(thermal_output,))
+# Targeting a frame rate of 10 FPS for thermal camera
+thermal_thread = Thread(target=thermal_camera_stream, args=(thermal_output, 10))
 thermal_thread.start()
 
 try:
