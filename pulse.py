@@ -111,29 +111,47 @@ class getPulseApp(object):
             if chr(self.pressed) == key:
                 self.key_controls[key]()
 
+
+
     def main_loop(self):
-        # Capture a frame from the Pi Camera
+        """
+        Single iteration of the application's main loop.
+        """
+        # Get current image frame from the camera
         frame = self.camera.capture_array()
+
+        # Ensure the frame has 3 channels (RGB), not 4 (RGBA)
+        if frame.shape[2] == 4:  # If the frame is RGBA
+            frame = frame[:, :, :3]  # Strip the alpha channel, keeping only RGB
+
         self.h, self.w, _c = frame.shape
 
         # Set current image frame to the processor's input
         self.processor.frame_in = frame
+        # Process the image frame to perform all needed analysis
         self.processor.run(0)
+        # Collect the output frame for display
         output_frame = self.processor.frame_out
+
+        # Ensure the output frame also has 3 channels (RGB)
+        if output_frame.shape[2] == 4:
+            output_frame = output_frame[:, :, :3]  # Strip the alpha channel
 
         # Show the processed/annotated output frame
         imshow("Processed", output_frame)
 
+        # Create and/or update the raw data display if needed
         if self.bpm_plot:
             self.make_bpm_plot()
 
+        # Handle serial and UDP transmission (if applicable)
         if self.send_serial:
             self.serial.write(str(self.processor.bpm) + "\r\n")
 
         if self.send_udp:
             self.sock.sendto(str(self.processor.bpm), self.udp)
 
-        # Handle key presses
+        # Handle any key presses
         self.key_handler()
 
 if __name__ == "__main__":
