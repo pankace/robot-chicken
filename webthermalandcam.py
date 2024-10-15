@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 import numpy as np
 import time, sys
-sys.path.append('../')
 import amg8833_i2c
 
 PAGE = """\
