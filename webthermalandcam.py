@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 import numpy as np
 import time, sys
+sys.path.append('../')
 import amg8833_i2c
 
 PAGE = """\
@@ -102,11 +103,9 @@ def thermal_camera_plot():
 
     plt.rcParams.update({'font.size': 16})
     fig, ax = plt.subplots(figsize=(10, 9))
-    fig.canvas.set_window_title('AMG8833 Image Interpolation')
     im1 = ax.imshow(np.zeros(interp_res), vmin=18, vmax=37, cmap=plt.cm.RdBu_r)
     cbar = fig.colorbar(im1, fraction=0.0475, pad=0.03)
     cbar.set_label('Temperature [C]', labelpad=10)
-    fig.show()
 
     while True:
         status, pixels = sensor.read_temp(64)
