@@ -57,7 +57,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
         elif self.path == '/thermal_stream.mjpg':
             self.stream_video(thermal_output)
         else:
-            self send_error(404)
+            self.send_error(404)  # Corrected here
             self.end_headers()
 
     def stream_video(self, stream_output):
