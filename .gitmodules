@@ -2,3 +2,7 @@
 	path = picamera2
 	url = https://github.com/raspberrypi/picamera2.git
 	branch = master
+[submodule "AMG8833_IR_cam"]
+	path = AMG8833_IR_cam
+	url = https://github.com/makerportal/AMG8833_IR_cam.git
+	branch = main
