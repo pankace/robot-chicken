@@ -1,0 +1,4 @@
+[submodule "picamera2"]
+	path = picamera2
+	url = https://github.com/raspberrypi/picamera2.git
+	branch = master
