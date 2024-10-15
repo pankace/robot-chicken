@@ -24,7 +24,7 @@ PAGE = """\
 <h1>Pi Camera and AMG8833 Thermal Camera</h1>
 <img src="stream.mjpg" width="640" height="480" />
 <h2>Thermal Camera Output</h2>
-<img src="thermal_plot.png" width="640" height="480" />
+<img src="thermal_stream.mjpg" width="640" height="480" />
 </body>
 </html>
 """
@@ -53,43 +53,40 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
         elif self.path == '/stream.mjpg':
-            self.send_response(200)
-            self.send_header('Age', 0)
-            self.send_header('Cache-Control', 'no-cache, private')
-            self.send_header('Pragma', 'no-cache')
-            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
-            self.end_headers()
-            try:
-                while True:
-                    with output.condition:
-                        output.condition.wait()
-                        frame = output.frame
-                    self.wfile.write(b'--FRAME\r\n')
-                    self.send_header('Content-Type', 'image/jpeg')
-                    self.send_header('Content-Length', len(frame))
-                    self.end_headers()
-                    self.wfile.write(frame)
-                    self.wfile.write(b'\r\n')
-            except Exception as e:
-                logging.warning('Removed streaming client %s: %s', self.client_address, str(e))
-        elif self.path == '/thermal_plot.png':
-            with open("thermal_plot.png", "rb") as file:
-                self.send_response(200)
-                self.send_header('Content-Type', 'image/png')
-                self.send_header('Content-Length', len(file.read()))
-                self.end_headers()
-                file.seek(0)
-                self.wfile.write(file.read())
+            self.stream_video(output)
+        elif self.path == '/thermal_stream.mjpg':
+            self.stream_video(thermal_output)
         else:
             self.send_error(404)
             self.end_headers()
+
+    def stream_video(self, stream_output):
+        self.send_response(200)
+        self.send_header('Age', 0)
+        self.send_header('Cache-Control', 'no-cache, private')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
+        self.end_headers()
+        try:
+            while True:
+                with stream_output.condition:
+                    stream_output.condition.wait()
+                    frame = stream_output.frame
+                self.wfile.write(b'--FRAME\r\n')
+                self.send_header('Content-Type', 'image/jpeg')
+                self.send_header('Content-Length', len(frame))
+                self.end_headers()
+                self.wfile.write(frame)
+                self.wfile.write(b'\r\n')
+        except Exception as e:
+            logging.warning('Removed streaming client %s: %s', self.client_address, str(e))
 
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-# Thermal camera thread
-def thermal_camera_plot():
+# Function to stream thermal camera plot as MJPEG
+def thermal_camera_stream(output):
     sensor = amg8833_i2c.AMG8833(addr=0x69)
     pix_res = (8, 8)
     xx, yy = (np.linspace(0, pix_res[0], pix_res[0]), np.linspace(0, pix_res[1], pix_res[1]))
@@ -114,8 +111,15 @@ def thermal_camera_plot():
         new_z = interp(np.reshape(pixels, pix_res))
         im1.set_data(new_z)
         fig.canvas.draw()
-        fig.savefig("thermal_plot.png")
-        time.sleep(1)
+        
+        # Save the plot to an in-memory buffer
+        buf = io.BytesIO()
+        fig.savefig(buf, format='jpeg')
+        buf.seek(0)
+        
+        # Write the frame to the thermal output stream
+        output.write(buf.read())
+        time.sleep(1)  # Limit the frame rate to one per second
 
 # Start the Pi camera stream
 picam2 = Picamera2()
@@ -123,8 +127,11 @@ picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 output = StreamingOutput()
 picam2.start_recording(JpegEncoder(), FileOutput(output))
 
-# Start the thermal camera plot in a separate thread
-thermal_thread = Thread(target=thermal_camera_plot)
+# Create the output object for thermal stream
+thermal_output = StreamingOutput()
+
+# Start the thermal camera stream in a separate thread
+thermal_thread = Thread(target=thermal_camera_stream, args=(thermal_output,))
 thermal_thread.start()
 
 try:
