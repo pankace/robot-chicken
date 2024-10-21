@@ -1,7 +1,7 @@
 import socket
 
 # Set up the TCP server
-TCP_IP = "0.0.0.0"  # Listen on all network interfaces
+TCP_IP = "127.0.0.1"  # Listen on all network interfaces
 TCP_PORT = 5005     # Port to listen on
 BUFFER_SIZE = 1024  # Buffer size for receiving data
 
