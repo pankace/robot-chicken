@@ -1,7 +1,7 @@
 import socket
 
 # Set up the UDP server
-UDP_IP = "0.0.0.0"  # Listen on all interfaces
+UDP_IP = " 127.0.0.1"  # Listen on all interfaces
 UDP_PORT = 5005     # Port to listen on
 
 # Create the socket
