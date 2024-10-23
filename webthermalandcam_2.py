@@ -100,7 +100,7 @@ def thermal_camera_stream(output, stop_event, frame_rate=10):
 
     plt.rcParams.update({'font.size': 16})
     fig, ax = plt.subplots(figsize=(10, 9))
-    im1 = ax.imshow(np.zeros(interp_res), vmin=18, vmax=37, cmap=plt.cm.plasma)
+    im1 = ax.imshow(np.zeros(interp_res), vmin=18, vmax=37, cmap=plt.cm.plasma)   #use turbo for more vivid colorse
     cbar = fig.colorbar(im1, fraction=0.0475, pad=0.03)
     cbar.set_label('Temperature [C]', labelpad=10)
 
