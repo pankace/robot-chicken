@@ -150,4 +150,5 @@ try:
 finally:
     stop_event.set()  # Signal the thermal thread to stop
     thermal_thread.join()  # Wait for the thermal thread to exit
-    picam2.stop_recording()
+    picam2.stop_recording() # fix : wait for thred to exit 
+    
