@@ -100,7 +100,7 @@ def thermal_camera_stream(output, stop_event, frame_rate=10):
 
     plt.rcParams.update({'font.size': 16})
     fig, ax = plt.subplots(figsize=(10, 9))
-    im1 = ax.imshow(np.zeros(interp_res), vmin=18, vmax=37, cmap=plt.cm.RdBu_r)
+    im1 = ax.imshow(np.zeros(interp_res), vmin=18, vmax=37, cmap=plt.cm.plasma)
     cbar = fig.colorbar(im1, fraction=0.0475, pad=0.03)
     cbar.set_label('Temperature [C]', labelpad=10)
 
@@ -151,4 +151,4 @@ finally:
     stop_event.set()  # Signal the thermal thread to stop
     thermal_thread.join()  # Wait for the thermal thread to exit
     picam2.stop_recording() # fix : wait for thred to exit 
-    
+
